@@ -1,0 +1,54 @@
+Agents:
+  Red:
+    actions:
+      DiscoverNetworkServices:
+        from_state: q0
+        to_state: q1
+        reward: 0
+      ExploitRemoteService:
+        from_state: q1
+        to_state: q2
+        reward: 1
+      PrivilegeEscalate:
+        from_state: q2
+        to_state: q3
+        reward: 5
+      Impact:
+        from_state: q3
+        to_state: q3
+        reward: 20
+  Blue:
+    actions:
+      Remove:
+        from_state: any
+        to_state: q1  # resets to q1, except q0->q0
+        reward: -1
+      NoOp:
+        from_state: any
+        to_state: same
+        reward: 0
+
+States:
+  - q0  # Secure/initial state
+  - q1  # Network services discovered
+  - q2  # Remote service exploited
+  - q3  # Privilege escalated/compromised
+
+Hosts:
+  Host_0:
+    initial_state: q0
+  Host_1:
+    initial_state: q0
+  Host_2:
+    initial_state: q0
+  Host_3:
+    initial_state: q0
+
+Topology:
+  type: star
+  num_hosts: 4
+  hosts:
+    - Host_0
+    - Host_1
+    - Host_2
+    - Host_3
