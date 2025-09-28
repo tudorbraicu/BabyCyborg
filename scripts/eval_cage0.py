@@ -6,7 +6,7 @@ import os
 # Add parent directory to path so we can import cage0
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from cage0.simulator import Cage0Sim
+from cage0.modular_simulator import ModularCage0Sim
 from cage0.agents import create_agent
 
 
@@ -44,7 +44,7 @@ def main():
 
     # Initialize environment and agents
     # Since env counts each agent action separately, multiply by 2 to get the desired number of cycles
-    env = Cage0Sim(args.scenario, args.max_steps * 2)
+    env = ModularCage0Sim(args.scenario, args.max_steps * 2)
     red_agent = create_agent(args.red_agent, name="Red")
     blue_agent = create_agent(args.blue_agent, name="Blue")
 
