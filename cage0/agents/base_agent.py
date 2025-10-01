@@ -16,13 +16,15 @@ class BaseAgent:
         """
         self.name = name
 
-    def get_action(self, state_vector: List[str], host_states: Dict[int, str], current_step: int) -> Dict[str, Any]:
+    def get_action(self, current_step: int) -> Dict[str, Any]:
         """
-        Get action given current state.
+        Get action based on agent's current DFA state from StateManager.
+
+        The agent queries its current state from StateManager and returns
+        the appropriate action. The agent does NOT update its own state—
+        that's StateManager's job after the action is executed.
 
         Args:
-            state_vector: List of host states (e.g., ['q0', 'q1', 'q0', 'q0'])
-            host_states: Dictionary mapping host index to state (e.g., {0: 'q0', 1: 'q1'})
             current_step: Current step number in the simulation
 
         Returns:

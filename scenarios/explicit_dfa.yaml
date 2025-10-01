@@ -1,0 +1,234 @@
+Agents:
+  Red:
+    initial_state: s1
+    states:
+      - s1   # Start: Discover Host_0
+      - s2   # Exploit Host_0
+      - s3   # Escalate Host_0
+      - s4   # Impact Host_0
+      - s5   # Discover Host_1
+      - s6   # Exploit Host_1
+      - s7   # Escalate Host_1
+      - s8   # Impact Host_1
+      - s9   # Discover Host_2
+      - s10  # Exploit Host_2
+      - s11  # Escalate Host_2
+      - s12  # Impact Host_2
+      - s13  # Discover Host_3
+      - s14  # Exploit Host_3
+      - s15  # Escalate Host_3
+      - s16  # Impact Host_3 (final state)
+    transitions:
+      # Host_0 attack sequence
+      step1:
+        action: "DiscoverNetworkServices"
+        target_host: 0
+        from_state: s1
+        on_success: s2
+        on_failure: s1    # retry discovery
+      step2:
+        action: "ExploitRemoteService"
+        target_host: 0
+        from_state: s2
+        on_success: s3
+        on_failure: s2    # retry exploit
+      step3:
+        action: "PrivilegeEscalate"
+        target_host: 0
+        from_state: s3
+        on_success: s4
+        on_failure: s3    # retry escalation
+      step4:
+        action: "Impact"
+        target_host: 0
+        from_state: s4
+        on_success: s5    # move to next host
+        on_failure: s4    # retry impact
+
+      # Host_1 attack sequence
+      step5:
+        action: "DiscoverNetworkServices"
+        target_host: 1
+        from_state: s5
+        on_success: s6
+        on_failure: s5
+      step6:
+        action: "ExploitRemoteService"
+        target_host: 1
+        from_state: s6
+        on_success: s7
+        on_failure: s6
+      step7:
+        action: "PrivilegeEscalate"
+        target_host: 1
+        from_state: s7
+        on_success: s8
+        on_failure: s7
+      step8:
+        action: "Impact"
+        target_host: 1
+        from_state: s8
+        on_success: s9
+        on_failure: s8
+
+      # Host_2 attack sequence
+      step9:
+        action: "DiscoverNetworkServices"
+        target_host: 2
+        from_state: s9
+        on_success: s10
+        on_failure: s9
+      step10:
+        action: "ExploitRemoteService"
+        target_host: 2
+        from_state: s10
+        on_success: s11
+        on_failure: s10
+      step11:
+        action: "PrivilegeEscalate"
+        target_host: 2
+        from_state: s11
+        on_success: s12
+        on_failure: s11
+      step12:
+        action: "Impact"
+        target_host: 2
+        from_state: s12
+        on_success: s13
+        on_failure: s12
+
+      # Host_3 attack sequence
+      step13:
+        action: "DiscoverNetworkServices"
+        target_host: 3
+        from_state: s13
+        on_success: s14
+        on_failure: s13
+      step14:
+        action: "ExploitRemoteService"
+        target_host: 3
+        from_state: s14
+        on_success: s15
+        on_failure: s14
+      step15:
+        action: "PrivilegeEscalate"
+        target_host: 3
+        from_state: s15
+        on_success: s16
+        on_failure: s15
+      step16:
+        action: "Impact"
+        target_host: 3
+        from_state: s16
+        on_success: s16    # stay in final state
+        on_failure: s16    # retry impact
+
+    # Host actions for Red agent
+    actions:
+      DiscoverNetworkServices:
+        from_state: q0
+        to_state: q1
+        reward: 0
+      ExploitRemoteService:
+        from_state: q1
+        to_state: q2
+        reward: 1
+      PrivilegeEscalate:
+        from_state: q2
+        to_state: q3
+        reward: 5
+      Impact:
+        from_state: q3
+        to_state: q3
+        reward: 20
+
+  Blue:
+    initial_state: b1
+    states:
+      - b1   # Monitor Host_0
+      - b2   # Monitor Host_1
+      - b3   # Monitor Host_2
+      - b4   # Monitor Host_3
+      - b5   # Emergency response
+    transitions:
+      monitor_cycle1:
+        action: "NoOp"
+        target_host: 0
+        from_state: b1
+        on_success: b2
+        on_failure: b1
+      monitor_cycle2:
+        action: "NoOp"
+        target_host: 1
+        from_state: b2
+        on_success: b3
+        on_failure: b2
+      monitor_cycle3:
+        action: "NoOp"
+        target_host: 2
+        from_state: b3
+        on_success: b4
+        on_failure: b3
+      monitor_cycle4:
+        action: "NoOp"
+        target_host: 3
+        from_state: b4
+        on_success: b1    # back to start
+        on_failure: b4
+      # Emergency response when needed
+      emergency_response:
+        action: "Remove"
+        target_host: 0    # always target Host_0 for simplicity
+        from_state: b5
+        on_success: b1    # back to monitoring
+        on_failure: b5    # retry
+
+    # Reactive transitions: triggered by environment changes (not actions)
+    reactive_transitions:
+      detect_compromise:
+        trigger: host_state_change
+        from_state: any  # Can interrupt any monitoring state
+        condition:
+          type: any_host_in_states
+          states: [q2, q3]  # Exploited or fully compromised
+        to_state: b5  # Enter emergency mode
+
+    # Host actions for Blue agent
+    actions:
+      Remove:
+        from_state: any
+        to_state:
+          # Conditional transitions: if current state matches, use this target
+          q0: q0  # Secure hosts stay secure
+          default: q1  # Compromised hosts reset to discovered
+        reward: -1
+      NoOp:
+        from_state: any
+        to_state: same
+        reward: 0
+        hostless: true  # This action doesn't require a specific host
+
+States:
+  - q0  # Secure/initial state
+  - q1  # Network services discovered
+  - q2  # Remote service exploited
+  - q3  # Privilege escalated/compromised
+
+Hosts:
+  Host_0:
+    initial_state: q0
+  Host_1:
+    initial_state: q0
+  Host_2:
+    initial_state: q0
+  Host_3:
+    initial_state: q0
+
+Topology:
+  type: star
+  num_hosts: 4
+  hosts:
+    - Host_0
+    - Host_1
+    - Host_2
+    - Host_3

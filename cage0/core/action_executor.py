@@ -50,6 +50,8 @@ class ActionExecutor:
         action_def = agent_actions.get(action, {})
 
         if not action_def:
+            # Notify agent of action failure
+            self.state_manager.update_agent_state(agent, "action_result", action=action, action_success=False)
             return ActionResult(False, current_state, 0.0, f"Action '{action}' not defined for agent '{agent}'")
 
         # Calculate new state and reward
@@ -57,16 +59,35 @@ class ActionExecutor:
 
         # Validate transition
         if not self.state_manager.can_transition(current_state, new_state, action, agent):
+            # Notify agent of action failure
+            self.state_manager.update_agent_state(agent, "action_result", action=action, action_success=False)
             return ActionResult(False, current_state, 0.0, f"Invalid transition: {current_state} -> {new_state}")
 
         # Apply the state change
+        old_host_state = current_state
         self.state_manager.set_host_state(host_id, new_state)
+
+        # Trigger agent state updates
+        if new_state != old_host_state:
+            # Host state changed - notify all agents
+            host_state_changes = {host_id: new_state}
+            for agent_name in self.state_manager.agent_names:
+                self.state_manager.update_agent_state(agent_name, "host_state_change",
+                                                    host_state_changes=host_state_changes)
+
+        # Notify the acting agent of action result (success/failure)
+        self.state_manager.update_agent_state(agent, "action_result", action=action, action_success=True)
 
         return ActionResult(True, new_state, reward, f"Action '{action}' executed successfully")
 
     def _apply_action_logic(self, current_state: str, action_def: Dict[str, Any], action: str) -> Tuple[str, float]:
         """
         Apply action logic to determine new state and reward.
+
+        Supports:
+        - Simple transitions: to_state: "q1"
+        - Same-state transitions: to_state: "same"
+        - Conditional transitions: to_state: {q0: q0, default: q1}
 
         Args:
             current_state: Current host state
@@ -84,14 +105,19 @@ class ActionExecutor:
         if from_state != 'any' and from_state != current_state:
             return current_state, 0.0  # Invalid state, no reward
 
-        # Calculate new state
+        # Calculate new state based on to_state type
         if to_state == 'same':
+            # Stay in current state
             new_state = current_state
-        elif to_state == 'q1' and action == 'Remove':
-            # Special case for Remove: q0->q0, others->q1
-            new_state = 'q0' if current_state == 'q0' else 'q1'
-        else:
+        elif isinstance(to_state, dict):
+            # Conditional transition: check current_state first, then default
+            new_state = to_state.get(current_state, to_state.get('default', current_state))
+        elif isinstance(to_state, str):
+            # Simple transition to fixed state
             new_state = to_state
+        else:
+            # Invalid to_state definition
+            new_state = current_state
 
         return new_state, reward
 

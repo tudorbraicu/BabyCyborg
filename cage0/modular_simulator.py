@@ -2,15 +2,17 @@
 Modular BabyCyborg Simulator - Refactored architecture.
 
 This replaces the monolithic Cage0Sim with a modular design using:
-- StateManager: Host state management
+- StateManager: Host and agent state management
 - ActionExecutor: Action execution and validation
 - RewardCalculator: Reward calculation and tracking
 
+Supports YAML-defined agent DFAs alongside host DFAs.
 Maintains compatibility with the original Cage0Sim interface.
 """
 import yaml
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from .core import StateManager, ActionExecutor, RewardCalculator
+from .agents.agent_generator import create_agents_from_yaml
 
 
 class ModularCage0Sim:
@@ -36,6 +38,9 @@ class ModularCage0Sim:
         self.num_hosts = self.state_manager.num_hosts
         self.host_names = self.state_manager.host_names
         self._agents = self.scenario_config['Agents']
+
+        # YAML-based agent instances (optional)
+        self.yaml_agents: Dict[str, Any] = {}
 
     def reset(self) -> List[str]:
         """Reset environment to initial state."""
@@ -160,6 +165,74 @@ class ModularCage0Sim:
     def get_reward_summary(self) -> Dict[str, Any]:
         """Get detailed reward statistics."""
         return self.reward_calculator.get_reward_summary()
+
+    def create_yaml_agents(self) -> Dict[str, Any]:
+        """
+        Create YAML-based agent instances from the scenario configuration.
+
+        Returns:
+            Dictionary mapping agent names to generated agent instances
+        """
+        self.yaml_agents = create_agents_from_yaml(self.scenario_config, self.state_manager)
+        return self.yaml_agents
+
+    def get_yaml_agent(self, agent_name: str) -> Optional[Any]:
+        """
+        Get a YAML-based agent instance.
+
+        Args:
+            agent_name: Name of the agent ('Red', 'Blue', etc.)
+
+        Returns:
+            Generated agent instance or None if not found
+        """
+        if agent_name not in self.yaml_agents:
+            # Try to create agents if not already created
+            if not self.yaml_agents:
+                self.create_yaml_agents()
+        return self.yaml_agents.get(agent_name)
+
+    def get_agent_states(self) -> Dict[str, str]:
+        """
+        Get current states of all agents.
+
+        Returns:
+            Dictionary mapping agent names to their current states
+        """
+        return {name: self.state_manager.get_agent_state(name) for name in self.state_manager.agent_names}
+
+    def auto_step(self) -> Dict[str, Any]:
+        """
+        Execute one simulation step using YAML-generated agents.
+
+        This high-level method automatically queries both agents for their
+        actions and executes them, eliminating the need for external
+        action selection.
+
+        Returns:
+            Same format as step() method
+        """
+        # Ensure YAML agents are created
+        if not self.yaml_agents:
+            self.create_yaml_agents()
+
+        # Get action from current agent
+        current_agent_name = self._current_agent
+        current_agent = self.get_yaml_agent(current_agent_name)
+        current_action_dict = current_agent.get_action(self._t)
+
+        # Get action from opponent agent
+        opponent_name = 'Blue' if current_agent_name == 'Red' else 'Red'
+        opponent_agent = self.get_yaml_agent(opponent_name)
+        opponent_action_dict = opponent_agent.get_action(self._t)
+
+        # Execute the step
+        return self.step(
+            action=current_action_dict['action'],
+            host=current_action_dict['host'],
+            opponent_action=opponent_action_dict['action'],
+            opponent_host=opponent_action_dict['host']
+        )
 
 
 
