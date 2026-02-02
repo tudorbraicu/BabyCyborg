@@ -7,7 +7,7 @@ This agent randomly chooses between:
 """
 import random
 from typing import Dict, Any
-from .base_agent import BaseAgent
+from ..base_agent import BaseAgent
 
 
 class RemoveHost0BlueAgent(BaseAgent):

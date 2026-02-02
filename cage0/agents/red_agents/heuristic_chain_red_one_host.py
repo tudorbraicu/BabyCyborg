@@ -7,7 +7,7 @@ Policy:
 """
 import random
 from typing import Dict, Any
-from .base_agent import BaseAgent
+from ..base_agent import BaseAgent
 
 
 # Kill chain order
