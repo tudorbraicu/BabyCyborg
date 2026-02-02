@@ -1,0 +1,36 @@
+# One Host Random Blue Agent
+# Randomly selects: Remove_0 or NoOp_0
+
+initial_state: b0
+start_host: 0
+
+states:
+  - b0
+  - b0_wait_remove
+  - b0_wait_noop
+
+transitions:
+  # Random action selection from b0
+  - from_state: b0
+    transition: "!Blue_Remove_0"
+    to_state: b0_wait_remove
+
+  - from_state: b0
+    transition: "!Blue_NoOp_0"
+    to_state: b0_wait_noop
+
+  # Remove_0 responses
+  - from_state: b0_wait_remove
+    transition: "?success"
+    to_state: b0
+  - from_state: b0_wait_remove
+    transition: "?failure"
+    to_state: b0
+
+  # NoOp responses
+  - from_state: b0_wait_noop
+    transition: "?success"
+    to_state: b0
+  - from_state: b0_wait_noop
+    transition: "?failure"
+    to_state: b0

@@ -1,0 +1,35 @@
+# Network Configuration
+# Defines the host states, topology, and actions that agents can perform
+
+States:
+  - q0   # Secure/initial state
+  - q1   # Network services discovered
+  - q2   # Remote service exploited
+  - q3   # Privilege escalated/compromised
+
+Hosts:
+  Host_0:
+    initial_state: q0  # All hosts start at q0 (secure state)
+    ip_address: 10.0.100.10
+  Host_1:
+    initial_state: q0  # Discovery is now tracked via ActionSpace, not host state
+    ip_address: 10.0.100.11
+  Host_2:
+    initial_state: q0
+    ip_address: 10.0.100.12
+  Host_3:
+    initial_state: q0
+    ip_address: 10.0.100.13
+
+Topology:
+  type: star
+  num_hosts: 4
+  hosts:
+    - Host_0
+    - Host_1
+    - Host_2
+    - Host_3
+
+# Note: Actions are now hard-coded in Python (cage0/actions/)
+# - Red: DiscoverRemoteSystems, DiscoverNetworkServices, ExploitRemoteService, PrivilegeEscalate, Impact
+# - Blue: NoOp, Remove

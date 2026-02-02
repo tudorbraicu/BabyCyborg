@@ -1,0 +1,507 @@
+# NetworkValidity_H0 Monitor (Communicating Automaton)
+#
+# Purpose: Enforces valid state transitions for Host_0
+#
+# This monitor shadow-tracks Host_0's state and validates that Red/Blue actions
+# follow the allowed transition sequence: q0 → q1 → q2 → q3
+#
+# Architecture: Three-step transitions (receive + emit + ack)
+#   - Receive: qX → qX_agent_action_0
+#   - Emit: qX_agent_action_0 → qX_agent_action_1
+#   - ACK: qX_agent_action_1 → destination
+#
+# Note: Host_0 starts at q0 (discovered), since Red starts here.
+# Other hosts start at q-1 (undiscovered) until Red performs DiscoverRemoteSystems.
+
+monitors:
+  - name: "NetworkValidity_H0"
+    initial_state: q0
+    states:
+      # Base host states
+      - q-1
+      - q0
+      - q1
+      - q2
+      - q3
+      # Intermediate states - two stages per action
+      - q-1_r_drs_0
+      - q-1_r_drs_1
+      - q-1_r_fail_0
+      - q-1_r_fail_1
+      - q-1_b_rm_0
+      - q-1_b_rm_1
+      - q-1_b_no_0
+      - q-1_b_no_1
+      - q0_r_dns_0
+      - q0_r_dns_1
+      - q0_r_drs_0
+      - q0_r_drs_1
+      - q0_r_fail_0
+      - q0_r_fail_1
+      - q0_b_rm_0
+      - q0_b_rm_1
+      - q0_b_no_0
+      - q0_b_no_1
+      - q1_r_dns_0
+      - q1_r_dns_1
+      - q1_r_drs_0
+      - q1_r_drs_1
+      - q1_r_ers_0
+      - q1_r_ers_1
+      - q1_r_fail_0
+      - q1_r_fail_1
+      - q1_b_rm_0
+      - q1_b_rm_1
+      - q1_b_no_0
+      - q1_b_no_1
+      - q2_r_dns_0
+      - q2_r_dns_1
+      - q2_r_drs_0
+      - q2_r_drs_1
+      - q2_r_ers_0
+      - q2_r_ers_1
+      - q2_r_pe_0
+      - q2_r_pe_1
+      - q2_r_fail_0
+      - q2_r_fail_1
+      - q2_b_rm_0
+      - q2_b_rm_1
+      - q2_b_no_0
+      - q2_b_no_1
+      - q3_r_dns_0
+      - q3_r_dns_1
+      - q3_r_drs_0
+      - q3_r_drs_1
+      - q3_r_ers_0
+      - q3_r_ers_1
+      - q3_r_pe_0
+      - q3_r_pe_1
+      - q3_r_imp_0
+      - q3_r_imp_1
+      - q3_r_fail_0
+      - q3_r_fail_1
+      - q3_b_rm_0
+      - q3_b_rm_1
+      - q3_b_no_0
+      - q3_b_no_1
+
+    transitions:
+      # -------------------------
+      # q-1 (undiscovered)
+      # -------------------------
+      # Red: DiscoverRemoteSystems (broadcast) -> q-1 → q0
+      # NOTE: Wildcard (*) because DRS on ANY host discovers ALL hosts
+      - from_state: q-1
+        transition: "?Red_DiscoverRemoteSystems_*"
+        to_state: q-1_r_drs_0
+      - from_state: q-1_r_drs_0
+        transition: "!success"
+        to_state: q-1_r_drs_1
+      - from_state: q-1_r_drs_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q-1_r_drs_1
+        transition: "?Referee_Result_0"
+        to_state: q-1
+
+      # Blue Remove / NoOp from q-1 (allowed, no state change)
+      - from_state: q-1
+        transition: "?Blue_Remove_0"
+        to_state: q-1_b_rm_0
+      - from_state: q-1_b_rm_0
+        transition: "!success"
+        to_state: q-1_b_rm_1
+      - from_state: q-1_b_rm_1
+        transition: "?Referee_Result_1"
+        to_state: q-1
+      - from_state: q-1_b_rm_1
+        transition: "?Referee_Result_0"
+        to_state: q-1
+
+      - from_state: q-1
+        transition: "?Blue_NoOp_0"
+        to_state: q-1_b_no_0
+      - from_state: q-1_b_no_0
+        transition: "!success"
+        to_state: q-1_b_no_1
+      - from_state: q-1_b_no_1
+        transition: "?Referee_Result_1"
+        to_state: q-1
+      - from_state: q-1_b_no_1
+        transition: "?Referee_Result_0"
+        to_state: q-1
+
+      # Any other Red action from q-1 is illegal (fail, stay q-1)
+      - from_state: q-1
+        transition: "?Red_*_0"
+        to_state: q-1_r_fail_0
+      - from_state: q-1_r_fail_0
+        transition: "!failure"
+        to_state: q-1_r_fail_1
+      - from_state: q-1_r_fail_1
+        transition: "?Referee_Result_0"
+        to_state: q-1
+
+      # -------------------------
+      # q0 (discovered, secure)
+      # -------------------------
+      # Red: DiscoverNetworkServices -> q0 → q1
+      - from_state: q0
+        transition: "?Red_DiscoverNetworkServices_0"
+        to_state: q0_r_dns_0
+      - from_state: q0_r_dns_0
+        transition: "!success"
+        to_state: q0_r_dns_1
+      - from_state: q0_r_dns_1
+        transition: "?Referee_Result_1"
+        to_state: q1
+      - from_state: q0_r_dns_1
+        transition: "?Referee_Result_0"
+        to_state: q0
+
+      # Red: DiscoverRemoteSystems again from q0 (allowed, no effect)
+      # NOTE: Wildcard (*) because DRS is a broadcast action
+      - from_state: q0
+        transition: "?Red_DiscoverRemoteSystems_*"
+        to_state: q0_r_drs_0
+      - from_state: q0_r_drs_0
+        transition: "!success"
+        to_state: q0_r_drs_1
+      - from_state: q0_r_drs_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q0_r_drs_1
+        transition: "?Referee_Result_0"
+        to_state: q0
+
+      # Blue Remove / NoOp from q0 (allowed, stay q0)
+      - from_state: q0
+        transition: "?Blue_Remove_0"
+        to_state: q0_b_rm_0
+      - from_state: q0_b_rm_0
+        transition: "!success"
+        to_state: q0_b_rm_1
+      - from_state: q0_b_rm_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q0_b_rm_1
+        transition: "?Referee_Result_0"
+        to_state: q0
+
+      - from_state: q0
+        transition: "?Blue_NoOp_0"
+        to_state: q0_b_no_0
+      - from_state: q0_b_no_0
+        transition: "!success"
+        to_state: q0_b_no_1
+      - from_state: q0_b_no_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q0_b_no_1
+        transition: "?Referee_Result_0"
+        to_state: q0
+
+      # Any other Red action from q0 (Exploit/PE/Impact) is illegal
+      - from_state: q0
+        transition: "?Red_*_0"
+        to_state: q0_r_fail_0
+      - from_state: q0_r_fail_0
+        transition: "!failure"
+        to_state: q0_r_fail_1
+      - from_state: q0_r_fail_1
+        transition: "?Referee_Result_0"
+        to_state: q0
+
+      # -------------------------
+      # q1 (services discovered)
+      # -------------------------
+      # Red: DiscoverNetworkServices from q1 (allowed, stays q1)
+      - from_state: q1
+        transition: "?Red_DiscoverNetworkServices_0"
+        to_state: q1_r_dns_0
+      - from_state: q1_r_dns_0
+        transition: "!success"
+        to_state: q1_r_dns_1
+      - from_state: q1_r_dns_1
+        transition: "?Referee_Result_1"
+        to_state: q1
+      - from_state: q1_r_dns_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      # Red: DiscoverRemoteSystems from q1 (allowed, stays q1)
+      # NOTE: Wildcard (*) because DRS is a broadcast action
+      - from_state: q1
+        transition: "?Red_DiscoverRemoteSystems_*"
+        to_state: q1_r_drs_0
+      - from_state: q1_r_drs_0
+        transition: "!success"
+        to_state: q1_r_drs_1
+      - from_state: q1_r_drs_1
+        transition: "?Referee_Result_1"
+        to_state: q1
+      - from_state: q1_r_drs_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      # Red: ExploitRemoteService -> q1 → q2
+      - from_state: q1
+        transition: "?Red_ExploitRemoteService_0"
+        to_state: q1_r_ers_0
+      - from_state: q1_r_ers_0
+        transition: "!success"
+        to_state: q1_r_ers_1
+      - from_state: q1_r_ers_1
+        transition: "?Referee_Result_1"
+        to_state: q2
+      - from_state: q1_r_ers_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      # Blue Remove resets q1 → q0; NoOp keeps q1
+      - from_state: q1
+        transition: "?Blue_Remove_0"
+        to_state: q1_b_rm_0
+      - from_state: q1_b_rm_0
+        transition: "!success"
+        to_state: q1_b_rm_1
+      - from_state: q1_b_rm_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q1_b_rm_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      - from_state: q1
+        transition: "?Blue_NoOp_0"
+        to_state: q1_b_no_0
+      - from_state: q1_b_no_0
+        transition: "!success"
+        to_state: q1_b_no_1
+      - from_state: q1_b_no_1
+        transition: "?Referee_Result_1"
+        to_state: q1
+      - from_state: q1_b_no_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      # Any other Red from q1 is illegal (PE/Impact without ERS first)
+      - from_state: q1
+        transition: "?Red_*_0"
+        to_state: q1_r_fail_0
+      - from_state: q1_r_fail_0
+        transition: "!failure"
+        to_state: q1_r_fail_1
+      - from_state: q1_r_fail_1
+        transition: "?Referee_Result_0"
+        to_state: q1
+
+      # -------------------------
+      # q2 (exploited)
+      # -------------------------
+      # Red: DiscoverNetworkServices from q2 (allowed, stays q2)
+      - from_state: q2
+        transition: "?Red_DiscoverNetworkServices_0"
+        to_state: q2_r_dns_0
+      - from_state: q2_r_dns_0
+        transition: "!success"
+        to_state: q2_r_dns_1
+      - from_state: q2_r_dns_1
+        transition: "?Referee_Result_1"
+        to_state: q2
+      - from_state: q2_r_dns_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # Red: DiscoverRemoteSystems from q2 (allowed, stays q2)
+      # NOTE: Wildcard (*) because DRS is a broadcast action
+      - from_state: q2
+        transition: "?Red_DiscoverRemoteSystems_*"
+        to_state: q2_r_drs_0
+      - from_state: q2_r_drs_0
+        transition: "!success"
+        to_state: q2_r_drs_1
+      - from_state: q2_r_drs_1
+        transition: "?Referee_Result_1"
+        to_state: q2
+      - from_state: q2_r_drs_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # Red: ExploitRemoteService from q2 (allowed, stays q2)
+      - from_state: q2
+        transition: "?Red_ExploitRemoteService_0"
+        to_state: q2_r_ers_0
+      - from_state: q2_r_ers_0
+        transition: "!success"
+        to_state: q2_r_ers_1
+      - from_state: q2_r_ers_1
+        transition: "?Referee_Result_1"
+        to_state: q2
+      - from_state: q2_r_ers_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # Red: PrivilegeEscalate -> q2 → q3
+      - from_state: q2
+        transition: "?Red_PrivilegeEscalate_0"
+        to_state: q2_r_pe_0
+      - from_state: q2_r_pe_0
+        transition: "!success"
+        to_state: q2_r_pe_1
+      - from_state: q2_r_pe_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q2_r_pe_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # Blue Remove resets q2 → q0; NoOp keeps q2
+      - from_state: q2
+        transition: "?Blue_Remove_0"
+        to_state: q2_b_rm_0
+      - from_state: q2_b_rm_0
+        transition: "!success"
+        to_state: q2_b_rm_1
+      - from_state: q2_b_rm_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q2_b_rm_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      - from_state: q2
+        transition: "?Blue_NoOp_0"
+        to_state: q2_b_no_0
+      - from_state: q2_b_no_0
+        transition: "!success"
+        to_state: q2_b_no_1
+      - from_state: q2_b_no_1
+        transition: "?Referee_Result_1"
+        to_state: q2
+      - from_state: q2_b_no_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # Any other Red from q2 is illegal (Impact without PE first)
+      - from_state: q2
+        transition: "?Red_*_0"
+        to_state: q2_r_fail_0
+      - from_state: q2_r_fail_0
+        transition: "!failure"
+        to_state: q2_r_fail_1
+      - from_state: q2_r_fail_1
+        transition: "?Referee_Result_0"
+        to_state: q2
+
+      # -------------------------
+      # q3 (priv-esc / compromised)
+      # -------------------------
+      # Red: DiscoverNetworkServices from q3 (allowed, stays q3)
+      - from_state: q3
+        transition: "?Red_DiscoverNetworkServices_0"
+        to_state: q3_r_dns_0
+      - from_state: q3_r_dns_0
+        transition: "!success"
+        to_state: q3_r_dns_1
+      - from_state: q3_r_dns_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_r_dns_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Red: DiscoverRemoteSystems from q3 (allowed, stays q3)
+      # NOTE: Wildcard (*) because DRS is a broadcast action
+      - from_state: q3
+        transition: "?Red_DiscoverRemoteSystems_*"
+        to_state: q3_r_drs_0
+      - from_state: q3_r_drs_0
+        transition: "!success"
+        to_state: q3_r_drs_1
+      - from_state: q3_r_drs_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_r_drs_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Red: ExploitRemoteService from q3 (allowed, stays q3)
+      - from_state: q3
+        transition: "?Red_ExploitRemoteService_0"
+        to_state: q3_r_ers_0
+      - from_state: q3_r_ers_0
+        transition: "!success"
+        to_state: q3_r_ers_1
+      - from_state: q3_r_ers_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_r_ers_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Red: PrivilegeEscalate from q3 (allowed, stays q3)
+      - from_state: q3
+        transition: "?Red_PrivilegeEscalate_0"
+        to_state: q3_r_pe_0
+      - from_state: q3_r_pe_0
+        transition: "!success"
+        to_state: q3_r_pe_1
+      - from_state: q3_r_pe_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_r_pe_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Red: Impact allowed, stays q3
+      - from_state: q3
+        transition: "?Red_Impact_0"
+        to_state: q3_r_imp_0
+      - from_state: q3_r_imp_0
+        transition: "!success"
+        to_state: q3_r_imp_1
+      - from_state: q3_r_imp_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_r_imp_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Blue Remove resets q3 → q0; NoOp keeps q3
+      - from_state: q3
+        transition: "?Blue_Remove_0"
+        to_state: q3_b_rm_0
+      - from_state: q3_b_rm_0
+        transition: "!success"
+        to_state: q3_b_rm_1
+      - from_state: q3_b_rm_1
+        transition: "?Referee_Result_1"
+        to_state: q0
+      - from_state: q3_b_rm_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      - from_state: q3
+        transition: "?Blue_NoOp_0"
+        to_state: q3_b_no_0
+      - from_state: q3_b_no_0
+        transition: "!success"
+        to_state: q3_b_no_1
+      - from_state: q3_b_no_1
+        transition: "?Referee_Result_1"
+        to_state: q3
+      - from_state: q3_b_no_1
+        transition: "?Referee_Result_0"
+        to_state: q3
+
+      # Any other Red from q3 is illegal (catch-all for undefined actions)
+      - from_state: q3
+        transition: "?Red_*_0"
+        to_state: q3_r_fail_0
+      - from_state: q3_r_fail_0
+        transition: "!failure"
+        to_state: q3_r_fail_1
+      - from_state: q3_r_fail_1
+        transition: "?Referee_Result_0"
+        to_state: q3

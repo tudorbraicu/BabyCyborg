@@ -1,0 +1,8 @@
+# HeuristicChainRedOneHost - Kill-chain Red agent for one host only
+#
+# Policy:
+# - 70%: Take next action in kill chain (DRS → DNS → ERS → PE → Impact)
+# - 30%: Random action on the host
+
+python_agent: heuristic_chain_red_one_host
+chain_probability: 0.7

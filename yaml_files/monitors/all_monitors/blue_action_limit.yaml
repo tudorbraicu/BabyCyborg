@@ -1,0 +1,109 @@
+# BlueActionLimit Monitor (Communicating Automaton)
+#
+# Rule: If Blue has 3 successful actions in a row, Blue's 4th action fails
+#
+# Architecture: Three-step transitions (receive + emit + ack)
+#   - Receive: state → state_agent_action_0
+#   - Emit: state_agent_action_0 → state_agent_action_1
+#   - ACK: state_agent_action_1 → destination
+#
+# Monitors are "opt-in blockers" - they only care about specific actions
+#
+# States:
+#   m0: 0 consecutive Blue successes
+#   m1: 1 consecutive Blue success
+#   m2: 2 consecutive Blue successes
+#   m3: 3 consecutive Blue successes (next Blue action will be BLOCKED)
+#
+# Key behavior: Any Blue failure resets to m0 (not to previous state)
+#
+
+monitors:
+  - name: "BlueActionLimit"
+    initial_state: "m0"
+    states:
+      - m0               # 0 consecutive successes
+      - m1               # 1 consecutive success
+      - m2               # 2 consecutive successes
+      - m3               # 3 consecutive successes (blocking mode)
+      # Intermediate states - two stages per action
+      - m0_b_any_0
+      - m0_b_any_1
+      - m1_b_any_0
+      - m1_b_any_1
+      - m2_b_any_0
+      - m2_b_any_1
+      - m3_b_any_0
+      - m3_b_any_1
+
+    transitions:
+      # -------------------------
+      # m0: 0 consecutive Blue successes
+      # -------------------------
+      # Blue acts from m0 - allow and potentially move to m1
+      - from_state: m0
+        transition: "?Blue_*"
+        to_state: m0_b_any_0
+      - from_state: m0_b_any_0
+        transition: "!success"
+        to_state: m0_b_any_1
+      - from_state: m0_b_any_1
+        transition: "?Referee_Result_1"
+        to_state: m1
+      - from_state: m0_b_any_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # -------------------------
+      # m1: 1 consecutive Blue success
+      # -------------------------
+      # Blue acts from m1 - allow and potentially move to m2
+      - from_state: m1
+        transition: "?Blue_*"
+        to_state: m1_b_any_0
+      - from_state: m1_b_any_0
+        transition: "!success"
+        to_state: m1_b_any_1
+      - from_state: m1_b_any_1
+        transition: "?Referee_Result_1"
+        to_state: m2
+      # KEY: Failure resets to m0, not back to m1
+      - from_state: m1_b_any_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # -------------------------
+      # m2: 2 consecutive Blue successes
+      # -------------------------
+      # Blue acts from m2 - allow and potentially move to m3
+      - from_state: m2
+        transition: "?Blue_*"
+        to_state: m2_b_any_0
+      - from_state: m2_b_any_0
+        transition: "!success"
+        to_state: m2_b_any_1
+      - from_state: m2_b_any_1
+        transition: "?Referee_Result_1"
+        to_state: m3
+      # KEY: Failure resets to m0, not back to m2
+      - from_state: m2_b_any_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # -------------------------
+      # m3: 3 consecutive Blue successes (BLOCKING MODE)
+      # -------------------------
+      # Blue acts from m3 - BLOCK this action (4th Blue action)
+      - from_state: m3
+        transition: "?Blue_*"
+        to_state: m3_b_any_0
+      - from_state: m3_b_any_0
+        transition: "!failure"
+        to_state: m3_b_any_1
+      # After blocking, reset to m0 regardless of final outcome
+      - from_state: m3_b_any_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # Note: Red actions don't match any transition, so they're allowed by default
+      # (monitor stays in current state, sends !success)

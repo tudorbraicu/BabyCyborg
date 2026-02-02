@@ -1,0 +1,25 @@
+# Blue Agent Logic (DFA) - Simple NoOp only
+# Ultra-simplified blue agent that only performs NoOp on Host_0
+
+initial_state: b0
+start_host: 0
+
+states:
+  - b0          # Initial state
+  - b0_wait     # Waiting for NoOp result
+
+transitions:
+  # Send NoOp action on Host_0
+  - from_state: b0
+    transition: "!Blue_NoOp_0"
+    to_state: b0_wait
+
+  # Receive success → return to initial state
+  - from_state: b0_wait
+    transition: "?success"
+    to_state: b0
+
+  # Receive failure → return to initial state
+  - from_state: b0_wait
+    transition: "?failure"
+    to_state: b0

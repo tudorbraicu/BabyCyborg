@@ -1,0 +1,8 @@
+# Four host: heuristic red vs random blue
+network: ../network_config/network_config.yaml
+
+agents:
+  Red: ../../cage0/agents/red_agents/heuristic_chain_red_multi_host.yaml
+  Blue: ../../cage0/agents/blue_agents/four_host_random_blue.yaml
+
+monitors: ../monitors/active

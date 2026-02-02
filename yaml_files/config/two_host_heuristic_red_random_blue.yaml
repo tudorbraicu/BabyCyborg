@@ -1,0 +1,8 @@
+# Two host: heuristic red vs random blue
+network: ../network_config/network_config.yaml
+
+agents:
+  Red: ../../cage0/agents/red_agents/heuristic_chain_red_h0_h1.yaml
+  Blue: ../../cage0/agents/blue_agents/two_host_random_blue.yaml
+
+monitors: ../monitors/active

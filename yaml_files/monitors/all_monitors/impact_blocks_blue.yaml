@@ -1,0 +1,72 @@
+# ImpactBlocksBlue Monitor (Communicating Automaton)
+#
+# Rule: If Red's Impact succeeds, Blue's next action fails
+#
+# Architecture: Three-step transitions (receive + emit + ack)
+#   - Receive: state → state_agent_action_0
+#   - Emit: state_agent_action_0 → state_agent_action_1
+#   - ACK: state_agent_action_1 → destination
+#
+# Monitors are "opt-in blockers" - they only care about specific actions
+#
+# States:
+#   m0: Initial state, monitoring
+#   m_blocking: Impact succeeded, ready to block Blue
+#
+
+monitors:
+  - name: "ImpactBlocksBlue"
+    initial_state: "m0"
+    states:
+      - m0               # Monitoring state
+      - m_blocking       # Blocking mode (waiting for Blue)
+      # Intermediate states - two stages per action
+      - m0_r_imp_0
+      - m0_r_imp_1
+      - m_blocking_b_any_0
+      - m_blocking_b_any_1
+      - m_blocking_r_any_0
+      - m_blocking_r_any_1
+
+    transitions:
+      # Red does Impact in m0 - allow and enter blocking mode
+      - from_state: m0
+        transition: "?Red_Impact_*"
+        to_state: m0_r_imp_0
+      - from_state: m0_r_imp_0
+        transition: "!success"
+        to_state: m0_r_imp_1
+      - from_state: m0_r_imp_1
+        transition: "?Referee_Result_1"
+        to_state: m_blocking
+      - from_state: m0_r_imp_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # Blue acts while in blocking mode - block Blue
+      - from_state: m_blocking
+        transition: "?Blue_*"
+        to_state: m_blocking_b_any_0
+      - from_state: m_blocking_b_any_0
+        transition: "!failure"
+        to_state: m_blocking_b_any_1
+      - from_state: m_blocking_b_any_1
+        transition: "?Referee_Result_0"
+        to_state: m0
+
+      # Red acts in blocking mode - allow and stay in blocking
+      - from_state: m_blocking
+        transition: "?Red_*"
+        to_state: m_blocking_r_any_0
+      - from_state: m_blocking_r_any_0
+        transition: "!success"
+        to_state: m_blocking_r_any_1
+      - from_state: m_blocking_r_any_1
+        transition: "?Referee_Result_1"
+        to_state: m_blocking
+      - from_state: m_blocking_r_any_1
+        transition: "?Referee_Result_0"
+        to_state: m_blocking
+
+      # Note: Actions that don't match any transition are allowed by default
+      # (monitor stays in current state, sends !success)

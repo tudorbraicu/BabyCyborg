@@ -1,0 +1,8 @@
+# Heuristic Chain Red Agent (Python-based)
+# 60% follow kill chain, 20% random action, 20% switch host
+
+python_agent: heuristic_chain_red_multi_host
+num_hosts: 4
+prob_chain: 0.60
+prob_random: 0.20
+prob_switch: 0.20

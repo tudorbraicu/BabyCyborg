@@ -1,0 +1,17 @@
+# ProgressiveChainRed++ - Systematic kill-chain Red agent with controlled noise
+#
+# Goal: Generate RPNI-friendly traces with:
+# - Reliable full attack chains (good "spine" coverage)
+# - Enough variation to avoid overfitting
+# - Shared prefixes with divergent suffixes
+#
+# Policy:
+# - 80% (core): Pick target host (lowest-index not yet "done") and take next action in chain
+#   Kill chain: DRS → DNS → ERS → PE → Impact
+# - 10% (noise): Random valid action on the same host
+# - 10% (noise): Hop to a different host
+#
+# This agent uses Python implementation for complex probability logic.
+
+python_agent: heuristic_chain_red_multi_host
+num_hosts: 2  # Only target Host_0 and Host_1

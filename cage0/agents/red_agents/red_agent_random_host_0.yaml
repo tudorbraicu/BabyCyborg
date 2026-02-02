@@ -1,0 +1,83 @@
+# Red Agent Logic (DFA) - Random Actions on Host 0
+# Defines a random exploration strategy for automata learning
+# Agent randomly selects one of 5 actions on Host_0, then returns to initial state
+
+initial_state: s0
+start_host: 0  # Red starts on Host_0
+
+states:
+  - s0              # Initial state - ready to select random action
+  - s0_drs_wait     # Waiting for DiscoverRemoteSystems result
+  - s0_dns_wait     # Waiting for DiscoverNetworkServices result
+  - s0_ers_wait     # Waiting for ExploitRemoteService result
+  - s0_pe_wait      # Waiting for PrivilegeEscalate result
+  - s0_impact_wait  # Waiting for Impact result
+
+transitions:
+  # ========== Random Action Selection from s0 ==========
+  # All 5 actions are valid from s0, agent randomly picks one
+
+  # Option 1: DiscoverRemoteSystems on Host_0
+  - from_state: s0
+    transition: "!Red_DiscoverRemoteSystems_0"
+    to_state: s0_drs_wait
+
+  # Option 2: DiscoverNetworkServices on Host_0
+  - from_state: s0
+    transition: "!Red_DiscoverNetworkServices_0"
+    to_state: s0_dns_wait
+
+  # Option 3: ExploitRemoteService on Host_0
+  - from_state: s0
+    transition: "!Red_ExploitRemoteService_0"
+    to_state: s0_ers_wait
+
+  # Option 4: PrivilegeEscalate on Host_0
+  - from_state: s0
+    transition: "!Red_PrivilegeEscalate_0"
+    to_state: s0_pe_wait
+
+  # Option 5: Impact on Host_0
+  - from_state: s0
+    transition: "!Red_Impact_0"
+    to_state: s0_impact_wait
+
+  # ========== DiscoverRemoteSystems Responses ==========
+  - from_state: s0_drs_wait
+    transition: "?success"
+    to_state: s0
+  - from_state: s0_drs_wait
+    transition: "?failure"
+    to_state: s0
+
+  # ========== DiscoverNetworkServices Responses ==========
+  - from_state: s0_dns_wait
+    transition: "?success"
+    to_state: s0
+  - from_state: s0_dns_wait
+    transition: "?failure"
+    to_state: s0
+
+  # ========== ExploitRemoteService Responses ==========
+  - from_state: s0_ers_wait
+    transition: "?success"
+    to_state: s0
+  - from_state: s0_ers_wait
+    transition: "?failure"
+    to_state: s0
+
+  # ========== PrivilegeEscalate Responses ==========
+  - from_state: s0_pe_wait
+    transition: "?success"
+    to_state: s0
+  - from_state: s0_pe_wait
+    transition: "?failure"
+    to_state: s0
+
+  # ========== Impact Responses ==========
+  - from_state: s0_impact_wait
+    transition: "?success"
+    to_state: s0
+  - from_state: s0_impact_wait
+    transition: "?failure"
+    to_state: s0

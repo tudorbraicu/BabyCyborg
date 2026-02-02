@@ -1,0 +1,9 @@
+# HeuristicChainRedMultiHost - Kill-chain Red agent for multiple hosts
+#
+# Policy:
+# - 80%: Follow kill chain (DRS → DNS → ERS → PE → Impact)
+# - 10%: Random action on same host
+# - 10%: Switch to different host
+
+python_agent: heuristic_chain_red_multi_host
+num_hosts: 4

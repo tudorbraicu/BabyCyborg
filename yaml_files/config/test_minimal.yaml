@@ -1,0 +1,8 @@
+# Minimal test scenario (no monitors)
+network: ../network_config/network_config.yaml
+
+agents:
+  Red: ../../cage0/agents/red_agents/red_agent_random_host_0.yaml
+  Blue: ../../cage0/agents/blue_agents/one_host_random_blue.yaml
+
+monitors: ../monitors/inactive
