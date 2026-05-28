@@ -30,9 +30,6 @@ Thumbs.db
 # Logs
 *.log
 
-# Claude Code
-.claude/
-
 # Data (large files)
 data/
 
