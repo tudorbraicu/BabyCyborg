@@ -63,7 +63,7 @@ This writes one `output_<i>.txt` per episode into `tmp_traces/`. Each file is a 
 
 ## CAV 2026: automata-learning case study
 
-The paper *"The Simulator's Blueprint: Automata Learning from System Event Logs"* uses BabyCyborg traces to learn deterministic finite automata via RPNI. The RPNI learner, the DFA evaluator, the raw CAGE2 traces, and the scripts that reproduce the paper's figures and tables are all packaged in the frozen reproducibility artifact on Zenodo: [10.5281/zenodo.19828945](https://doi.org/10.5281/zenodo.19828945).
+The paper *"The Simulator's Blueprint: Automata Learning from Cybersecurity Logs"* uses BabyCyborg traces to learn deterministic finite automata via RPNI. The RPNI learner, the DFA evaluator, the raw CAGE2 traces, and the scripts that reproduce the paper's figures and tables are all packaged in the frozen reproducibility artifact on Zenodo: [10.5281/zenodo.19828945](https://doi.org/10.5281/zenodo.19828945).
 
 ## License
 
