@@ -1,7 +1,1 @@
-# System dependency (not on PyPI): the graphviz binary
-#   macOS:  brew install graphviz
-#   Debian: apt-get install graphviz
-
-aalpy==1.5.3
 PyYAML==6.0.3
-graphviz==0.21

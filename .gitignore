@@ -33,6 +33,12 @@ Thumbs.db
 # Data (large files)
 data/
 
+# Automata-learning code (lives in the Zenodo artifact, not on GitHub)
+sim_learn/
+evaluation/
+scripts/learn_dfa.py
+scripts/evaluate_dfas_on_traces.py
+
 # Todo
 todo.txt
 
