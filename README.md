@@ -57,6 +57,18 @@ print('states:', len(learner.get_dfa_sim().states))
 
 This runs RPNI and produces a `.dot` automaton. Render it to PNG with `python sim_learn/visualize_dfa.py path/to/file.dot` (requires the Graphviz system binary).
 
+### Evaluate a learned DFA
+
+Score a learned `.dot` automaton by replaying held-out traces through it and measuring how often its predictions match reality:
+
+```python
+from evaluation.evaluator import DFAEvaluator
+
+evaluator = DFAEvaluator('path/to/learned.dot')
+result = evaluator.evaluate_trace('tmp_traces/output_42.txt')
+print(result)  # per-step matches, accuracy, etc.
+```
+
 ## CAV 2026 artifact
 
 The frozen reproducibility artifact for *"The Simulator's Blueprint: Automata Learning from System Event Logs"* (Docker image, raw CAGE2 traces, scripts to reproduce the paper's figures and tables) is on Zenodo: [10.5281/zenodo.19828945](https://doi.org/10.5281/zenodo.19828945).
