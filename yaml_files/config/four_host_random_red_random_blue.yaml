@@ -1,8 +1,0 @@
-# Four host: random red vs random blue
-network: ../network_config/network_config.yaml
-
-agents:
-  Red: ../../cage0/agents/red_agents/red_agent_random_all_hosts.yaml
-  Blue: ../../cage0/agents/blue_agents/four_host_random_blue.yaml
-
-monitors: ../monitors/active

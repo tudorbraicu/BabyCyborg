@@ -21,6 +21,7 @@ build/
 htmlcov/
 test_*.py
 example_*.py
+tests/
 
 # OS
 .DS_Store
